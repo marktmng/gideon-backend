@@ -1,0 +1,3 @@
+@echo off
+echo Starting Gideon Backend Server...
+.\.venv\Scripts\uvicorn.exe app.main:app --reload --port 8000
