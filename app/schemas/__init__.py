@@ -19,6 +19,12 @@ from app.schemas.task import (
     TaskStatus,
     TaskPriority,
 )
+from app.schemas.memory import (
+    MemoryCreate,
+    MemoryUpdate,
+    MemoryRead,
+    MemoryListResponse,
+)
 from app.schemas.assistant import AssistantStatus
 
 __all__ = [
@@ -36,5 +42,9 @@ __all__ = [
     "TaskListResponse",
     "TaskStatus",
     "TaskPriority",
+    "MemoryCreate",
+    "MemoryUpdate",
+    "MemoryRead",
+    "MemoryListResponse",
     "AssistantStatus",
 ]
