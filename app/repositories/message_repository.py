@@ -1,7 +1,7 @@
 """Repository for Message persistence operations."""
 import uuid
 from typing import List, Tuple, Optional
-from sqlalchemy import select, func, asc
+from sqlalchemy import select, func, asc, desc
 from sqlalchemy.orm import Session
 from app.models.message import Message
 
@@ -60,7 +60,8 @@ class MessageRepository:
         stmt = (
             select(Message)
             .where(Message.conversation_id == conversation_id)
-            .order_by(asc(Message.created_at))
+            .order_by(desc(Message.created_at))
             .limit(limit)
         )
-        return list(self.db.execute(stmt).scalars().all())
+        recent_desc = list(self.db.execute(stmt).scalars().all())
+        return list(reversed(recent_desc))

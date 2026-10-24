@@ -55,12 +55,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.core.exceptions import (
+    EntityNotFoundError,
+    GideonException,
+    AIProviderError,
+    AIConfigurationError,
+    AIRateLimitError,
+    AIProviderTimeoutError,
+)
+
 # Exception handlers
 @app.exception_handler(EntityNotFoundError)
 async def entity_not_found_handler(request: Request, exc: EntityNotFoundError):
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content={"detail": str(exc), "error_type": "EntityNotFound"}
+    )
+
+
+@app.exception_handler(AIConfigurationError)
+async def ai_configuration_error_handler(request: Request, exc: AIConfigurationError):
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": str(exc), "error_type": "AIConfigurationError"}
+    )
+
+
+@app.exception_handler(AIRateLimitError)
+async def ai_rate_limit_error_handler(request: Request, exc: AIRateLimitError):
+    return JSONResponse(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        content={"detail": str(exc), "error_type": "AIRateLimitError"}
+    )
+
+
+@app.exception_handler(AIProviderTimeoutError)
+async def ai_timeout_error_handler(request: Request, exc: AIProviderTimeoutError):
+    return JSONResponse(
+        status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+        content={"detail": str(exc), "error_type": "AIProviderTimeoutError"}
+    )
+
+
+@app.exception_handler(AIProviderError)
+async def ai_provider_error_handler(request: Request, exc: AIProviderError):
+    return JSONResponse(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": str(exc), "error_type": "AIProviderError"}
     )
 
 

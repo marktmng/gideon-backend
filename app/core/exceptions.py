@@ -17,3 +17,18 @@ class EntityNotFoundError(GideonException):
 class AIProviderError(GideonException):
     """Raised when an AI provider fails to generate a response."""
     pass
+
+
+class AIConfigurationError(AIProviderError):
+    """Raised when an AI provider configuration is invalid or missing required credentials."""
+    pass
+
+
+class AIProviderTimeoutError(AIProviderError):
+    """Raised when an AI provider request times out."""
+    pass
+
+
+class AIRateLimitError(AIProviderError):
+    """Raised when an AI provider rate limit is exceeded."""
+    pass
