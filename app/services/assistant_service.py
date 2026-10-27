@@ -47,7 +47,7 @@ class AssistantService:
 
         return AssistantStatus(
             name=settings.app_name,
-            version="2.0.0 (Phase 2)",
+            version="3.0.0 (Phase 3)",
             provider=provider_name,
             is_demo=is_demo,
             model=settings.ai_model if settings.ai_model else "local-demo-engine",
@@ -67,13 +67,16 @@ class AssistantService:
                 "google_gemini_provider",
                 "offline_demo_provider",
                 "database_migrations",
+                "voice_speech_interaction",
+                "camera_vision_service",
+                "hand_gesture_recognition",
+                "futuristic_tech_brain_ui",
             ],
             unconfigured_features=[
-                "real_time_voice_synthesis",
-                "wake_word_activation",
-                "camera_visual_awareness",
-                "computer_automation_actions",
+                "wake_word_continuous_activation",
+                "computer_desktop_automation",
                 "calendar_email_integrations",
+                "biometric_facial_identification",
             ],
         )
 
