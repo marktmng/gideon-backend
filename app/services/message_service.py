@@ -9,6 +9,9 @@ from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.message_repository import MessageRepository
 from app.services.assistant_service import AssistantService
 from app.services.memory_service import MemoryService
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.desktop.ai_tool_bridge import DesktopIntentBridge
 
 logger = get_logger(__name__)
 
@@ -19,12 +22,14 @@ class MessageService:
         message_repo: MessageRepository,
         conversation_repo: ConversationRepository,
         assistant_service: AssistantService,
-        memory_service: Optional[MemoryService] = None
+        memory_service: Optional[MemoryService] = None,
+        desktop_intent_bridge: Optional["DesktopIntentBridge"] = None,
     ):
         self.message_repo = message_repo
         self.conversation_repo = conversation_repo
         self.assistant_service = assistant_service
         self.memory_service = memory_service
+        self.desktop_intent_bridge = desktop_intent_bridge
 
     def list_messages(
         self,
@@ -124,6 +129,17 @@ class MessageService:
             conversation_id=conversation_id,
             content=content
         )
+
+        # Check if query is an allowlisted desktop directive
+        if self.desktop_intent_bridge:
+            intent_result = self.desktop_intent_bridge.try_handle_desktop_intent(content)
+            if intent_result:
+                reply_text, _ = intent_result
+                assistant_message = self.save_assistant_message(
+                    conversation_id=conversation_id,
+                    content=reply_text
+                )
+                return user_message, assistant_message
 
         # Generate assistant response
         try:
