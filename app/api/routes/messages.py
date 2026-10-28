@@ -107,6 +107,30 @@ async def submit_message_stream(
         }
         yield f"event: start\ndata: {json.dumps(start_payload)}\n\n"
 
+        # Check for natural language desktop directive
+        if service.desktop_intent_bridge:
+            intent_result = service.desktop_intent_bridge.try_handle_desktop_intent(payload.content)
+            if intent_result:
+                reply_text, _ = intent_result
+                yield f"event: delta\ndata: {json.dumps({'delta': reply_text})}\n\n"
+                asst_msg = service.save_assistant_message(
+                    conversation_id=conversation_id,
+                    content=reply_text
+                )
+                asst_msg_data = {
+                    "id": str(asst_msg.id),
+                    "conversation_id": str(asst_msg.conversation_id),
+                    "role": asst_msg.role,
+                    "content": asst_msg.content,
+                    "created_at": asst_msg.created_at.isoformat() if asst_msg.created_at else None,
+                }
+                complete_payload = {
+                    "conversation_id": str(conversation_id),
+                    "assistant_message": asst_msg_data,
+                }
+                yield f"event: complete\ndata: {json.dumps(complete_payload)}\n\n"
+                return
+
         accumulated_chunks = []
         try:
             async for chunk in service.assistant_service.generate_stream(
