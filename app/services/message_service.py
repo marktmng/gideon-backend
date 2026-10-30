@@ -130,9 +130,11 @@ class MessageService:
             content=content
         )
 
-        # Check if query is an allowlisted desktop directive
+        # Check if query is an allowlisted desktop directive or local PC awareness query
         if self.desktop_intent_bridge:
-            intent_result = self.desktop_intent_bridge.try_handle_desktop_intent(content)
+            intent_result = self.desktop_intent_bridge.try_handle_desktop_intent(
+                content, db=self.message_repo.db
+            )
             if intent_result:
                 reply_text, _ = intent_result
                 assistant_message = self.save_assistant_message(

@@ -107,9 +107,9 @@ async def submit_message_stream(
         }
         yield f"event: start\ndata: {json.dumps(start_payload)}\n\n"
 
-        # Check for natural language desktop directive
+        # Check for natural language desktop or local PC awareness directive
         if service.desktop_intent_bridge:
-            intent_result = service.desktop_intent_bridge.try_handle_desktop_intent(payload.content)
+            intent_result = service.desktop_intent_bridge.try_handle_desktop_intent(payload.content, db=db)
             if intent_result:
                 reply_text, _ = intent_result
                 yield f"event: delta\ndata: {json.dumps({'delta': reply_text})}\n\n"

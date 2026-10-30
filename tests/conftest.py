@@ -28,6 +28,9 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
     """Create test database schema before running tests and clean up afterwards."""
+    from app.core.config import settings
+    settings.ai_provider = "demo"
+    settings.app_env = "test"
     # Ensure fresh schema
     Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)

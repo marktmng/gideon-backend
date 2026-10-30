@@ -21,6 +21,22 @@ class Settings(BaseSettings):
     frontend_origin: str = "http://localhost:3000"
     api_v1_prefix: str = "/api/v1"
 
+    # Phase 5 Addition: Scheduled Daily Business Summary & n8n settings
+    summary_schedule_time: str = "18:00"  # Configurable evening schedule (HH:MM)
+    summary_timezone: str = "UTC"         # Configurable timezone (e.g. UTC, America/New_York, Pacific/Auckland)
+    summary_delivery_channel: str = "local"  # "local", "email", "webhook"
+    summary_delivery_email: Optional[str] = None
+    summary_webhook_url: Optional[str] = None
+    summary_auto_schedule: bool = True
+
+    # Local-First AI & PC Context Settings
+    ollama_base_url: str = "http://127.0.0.1:11434"
+    ollama_model: str = "qwen2.5:3b"
+    local_monitoring_enabled: bool = False
+    screen_inspection_allowed: bool = True
+    workspace_inspection_allowed: bool = True
+    local_monitoring_poll_interval_seconds: int = 5
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

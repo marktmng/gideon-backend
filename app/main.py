@@ -1,19 +1,59 @@
 """Main FastAPI application entrypoint for Gideon AI Assistant."""
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.api.router import api_router
 from app.api.routes.health import router as health_router
 from app.core.config import settings
-from app.core.exceptions import EntityNotFoundError, GideonException
+from app.core.exceptions import (
+    EntityNotFoundError,
+    GideonException,
+    AIProviderError,
+    AIConfigurationError,
+    AIRateLimitError,
+    AIProviderTimeoutError,
+)
 from app.core.logging import setup_logging, get_logger
-from app.db.session import verify_database_connection, engine
+from app.db.session import verify_database_connection, engine, SessionLocal
 from app.db.base import Base
 
 # Initialize logging
 setup_logging(debug=settings.debug)
 logger = get_logger(__name__)
+
+
+def reconcile_orphaned_agent_tasks(db=None):
+    """Reconcile tasks left in running or planning states due to unexpected backend termination."""
+    from app.models.agent import AgentTask
+    from app.schemas.agent import TaskStatusEnum, StepStatusEnum
+
+    def _reconcile(session):
+        interrupted_tasks = session.query(AgentTask).filter(
+            AgentTask.status.in_([TaskStatusEnum.running.value, TaskStatusEnum.planning.value])
+        ).all()
+        for task in interrupted_tasks:
+            task.status = TaskStatusEnum.failed.value
+            task.error_message = "Task execution interrupted by backend server restart."
+            task.completed_at = datetime.now(timezone.utc)
+            for step in (task.steps or []):
+                if step.status == StepStatusEnum.running.value:
+                    step.status = StepStatusEnum.failed.value
+                    step.error_message = "Step execution interrupted by backend server restart."
+                    step.completed_at = datetime.now(timezone.utc)
+        if interrupted_tasks:
+            session.commit()
+            logger.info("Reconciled %d orphaned task(s) from previous server session.", len(interrupted_tasks))
+
+    try:
+        if db is not None:
+            _reconcile(db)
+        else:
+            with SessionLocal() as session:
+                _reconcile(session)
+    except Exception as e:
+        logger.warning("Could not reconcile orphaned tasks: %s", e)
 
 
 @asynccontextmanager
@@ -26,6 +66,7 @@ async def lifespan(app: FastAPI):
         if settings.is_sqlite:
             Base.metadata.create_all(bind=engine)
             logger.info("SQLite schema verified.")
+        reconcile_orphaned_agent_tasks()
     except Exception as e:
         logger.error("Startup database check encountered an issue: %s", str(e))
     yield
@@ -41,27 +82,20 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS configuration - restricted to configured frontend origin
+# CORS configuration - permissive for local desktop assistant frontend and tools
 origins = [
     settings.frontend_origin,
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=list(set(origins)),
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
-)
-
-from app.core.exceptions import (
-    EntityNotFoundError,
-    GideonException,
-    AIProviderError,
-    AIConfigurationError,
-    AIRateLimitError,
-    AIProviderTimeoutError,
 )
 
 # Exception handlers

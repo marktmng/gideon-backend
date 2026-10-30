@@ -1,4 +1,5 @@
 """FastAPI dependencies for injecting repositories and services."""
+from typing import Optional, Any, TYPE_CHECKING
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
@@ -13,9 +14,18 @@ from app.services.task_service import TaskService
 from app.services.memory_service import MemoryService
 from app.desktop.service import DesktopTaskService
 from app.desktop.ai_tool_bridge import DesktopIntentBridge
-from typing import Optional
+from app.services.daily_summary_service import DailySummaryService
+from app.services.local_context_service import LocalContextService
+from app.services.local_monitoring_service import LocalMonitoringService
+
+if TYPE_CHECKING:
+    from app.services.agent_service import AgentService
 
 _desktop_service_instance: Optional[DesktopTaskService] = None
+_agent_service_instance: Optional[Any] = None
+_summary_service_instance: Optional[DailySummaryService] = None
+_local_context_instance: Optional[LocalContextService] = None
+_local_monitoring_instance: Optional[LocalMonitoringService] = None
 
 
 def get_desktop_service() -> DesktopTaskService:
@@ -25,10 +35,52 @@ def get_desktop_service() -> DesktopTaskService:
     return _desktop_service_instance
 
 
-def get_desktop_intent_bridge(
+def get_local_context_service(
     desktop_service: DesktopTaskService = Depends(get_desktop_service)
+) -> LocalContextService:
+    global _local_context_instance
+    if _local_context_instance is None:
+        _local_context_instance = LocalContextService(desktop_adapter=desktop_service.adapter)
+    return _local_context_instance
+
+
+def get_local_monitoring_service(
+    context_service: LocalContextService = Depends(get_local_context_service)
+) -> LocalMonitoringService:
+    global _local_monitoring_instance
+    if _local_monitoring_instance is None:
+        _local_monitoring_instance = LocalMonitoringService(context_service=context_service)
+    return _local_monitoring_instance
+
+
+def get_agent_service(
+    desktop_service: DesktopTaskService = Depends(get_desktop_service)
+) -> "AgentService":
+    global _agent_service_instance
+    if _agent_service_instance is None:
+        from app.services.agent_service import AgentService
+        _agent_service_instance = AgentService(desktop_service=desktop_service)
+    return _agent_service_instance
+
+
+def get_desktop_intent_bridge(
+    desktop_service: DesktopTaskService = Depends(get_desktop_service),
+    context_service: LocalContextService = Depends(get_local_context_service),
+    agent_service: "AgentService" = Depends(get_agent_service),
+    db: Session = Depends(get_db),
 ) -> DesktopIntentBridge:
-    return DesktopIntentBridge(desktop_service=desktop_service)
+    # Resolve fallback if called outside FastAPI dependency injection container
+    ds = get_desktop_service() if hasattr(desktop_service, "dependency") or desktop_service is None else desktop_service
+    cs = get_local_context_service(ds) if hasattr(context_service, "dependency") or context_service is None else context_service
+    asvc = get_agent_service(ds) if hasattr(agent_service, "dependency") or agent_service is None else agent_service
+    active_db = None if hasattr(db, "dependency") else db
+
+    return DesktopIntentBridge(
+        desktop_service=ds,
+        context_service=cs,
+        agent_service=asvc,
+        db=active_db,
+    )
 
 
 def get_conversation_repository(db: Session = Depends(get_db)) -> ConversationRepository:
@@ -84,3 +136,9 @@ def get_task_service(
 ) -> TaskService:
     return TaskService(repository=repo)
 
+
+def get_daily_summary_service() -> DailySummaryService:
+    global _summary_service_instance
+    if _summary_service_instance is None:
+        _summary_service_instance = DailySummaryService()
+    return _summary_service_instance

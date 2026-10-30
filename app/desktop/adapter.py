@@ -143,8 +143,30 @@ class WindowsDesktopAdapter(BaseDesktopAdapter):
                 "verified": True,
             }
 
+        if binary.startswith("ms-") or binary.startswith("microsoft.") or binary.lower().endswith(".lnk") or (os.path.isabs(binary) and os.path.exists(binary)):
+            if is_windows:
+                os.startfile(binary)
+            return {
+                "app_name": app_name,
+                "status": "launched",
+                "details": f"Launched Windows application '{app_name}'.",
+                "verified": True,
+            }
+
         resolved_path = self._resolve_binary_path(binary)
         if not resolved_path:
+            if is_windows:
+                try:
+                    os.startfile(binary)
+                    return {
+                        "app_name": app_name,
+                        "binary_path": binary,
+                        "status": "running",
+                        "details": f"Launched '{app_name}' via Windows Shell.",
+                        "verified": True,
+                    }
+                except Exception as shell_err:
+                    raise RuntimeError(f"Executable for '{app_name}' ({binary}) could not be resolved or opened: {shell_err}")
             raise RuntimeError(f"Executable for '{app_name}' ({binary}) could not be resolved on this system.")
 
         safe_cmd = [resolved_path]
@@ -155,7 +177,8 @@ class WindowsDesktopAdapter(BaseDesktopAdapter):
             for a in args:
                 safe_cmd.append(str(a))
 
-        proc = subprocess.Popen(safe_cmd, shell=False)
+        no_win = 0x08000000 if (is_windows and resolved_path.lower().endswith((".cmd", ".bat"))) else 0
+        proc = subprocess.Popen(safe_cmd, shell=False, creationflags=no_win)
         time.sleep(0.15)
 
         # Verify process is running or launched
@@ -537,7 +560,13 @@ class WindowsDesktopAdapter(BaseDesktopAdapter):
                 f"$b.Save('{str(dest_path).replace(os.sep, '/')}', [Drawing.Imaging.ImageFormat]::Png); "
                 f"$g.Dispose(); $b.Dispose();"
             )
-            subprocess.run(["powershell", "-NoProfile", "-Command", ps_script], capture_output=True, timeout=10)
+            no_win = 0x08000000 if is_windows else 0
+            subprocess.run(
+                ["powershell", "-NoProfile", "-Command", ps_script],
+                capture_output=True,
+                timeout=10,
+                creationflags=no_win,
+            )
 
         file_size = dest_path.stat().st_size if dest_path.exists() else 0
 
