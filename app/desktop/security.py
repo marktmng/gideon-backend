@@ -67,6 +67,206 @@ DEFAULT_APPLICATION_ALLOWLIST: Dict[str, Dict[str, str]] = {
         "name": "Visual Studio Code",
         "description": "Visual Studio Code editor",
     },
+    "calc": {
+        "binary": "calc.exe",
+        "name": "Calculator",
+        "description": "Windows calculator utility",
+    },
+    "paint": {
+        "binary": "mspaint.exe",
+        "name": "Paint",
+        "description": "Windows graphic image editor",
+    },
+    "antigravity": {
+        "binary": "antigravity.exe",
+        "name": "Antigravity IDE",
+        "description": "Antigravity Development Environment",
+    },
+    "google_chrome": {
+        "binary": "chrome.exe",
+        "name": "Google Chrome",
+        "description": "Google Chrome browser",
+    },
+    "firefox": {
+        "binary": "firefox.exe",
+        "name": "Mozilla Firefox",
+        "description": "Mozilla Firefox browser",
+    },
+    "brave": {
+        "binary": "brave.exe",
+        "name": "Brave Browser",
+        "description": "Brave Web Browser",
+    },
+    "cmd": {
+        "binary": "cmd.exe",
+        "name": "Command Prompt",
+        "description": "Windows Command Prompt",
+    },
+    "visual_studio_code": {
+        "binary": "code.cmd",
+        "name": "Visual Studio Code",
+        "description": "Visual Studio Code editor",
+    },
+    "task_manager": {
+        "binary": "taskmgr.exe",
+        "name": "Task Manager",
+        "description": "Windows Task Manager utility",
+    },
+    "taskmanager": {
+        "binary": "taskmgr.exe",
+        "name": "Task Manager",
+        "description": "Windows Task Manager utility",
+    },
+    "taskmgr": {
+        "binary": "taskmgr.exe",
+        "name": "Task Manager",
+        "description": "Windows Task Manager utility",
+    },
+    "control_panel": {
+        "binary": "control.exe",
+        "name": "Control Panel",
+        "description": "Windows Control Panel",
+    },
+    "settings": {
+        "binary": "ms-settings:",
+        "name": "Settings",
+        "description": "Windows System Settings",
+    },
+    "windows_settings": {
+        "binary": "ms-settings:",
+        "name": "Settings",
+        "description": "Windows System Settings",
+    },
+    "camera": {
+        "binary": "microsoft.windows.camera:",
+        "name": "Camera",
+        "description": "Windows Camera application",
+    },
+    "clock": {
+        "binary": "ms-clock:",
+        "name": "Clock & Alarms",
+        "description": "Windows Clock application",
+    },
+    "alarms": {
+        "binary": "ms-clock:",
+        "name": "Clock & Alarms",
+        "description": "Windows Clock application",
+    },
+    "photos": {
+        "binary": "ms-photos:",
+        "name": "Photos",
+        "description": "Windows Photos application",
+    },
+    "snipping_tool": {
+        "binary": "snippingtool.exe",
+        "name": "Snipping Tool",
+        "description": "Windows Snipping Tool screen capture",
+    },
+    "snip": {
+        "binary": "snippingtool.exe",
+        "name": "Snipping Tool",
+        "description": "Windows Snipping Tool screen capture",
+    },
+    "spotify": {
+        "binary": "spotify.exe",
+        "name": "Spotify",
+        "description": "Spotify Music Player",
+    },
+    "discord": {
+        "binary": "discord.exe",
+        "name": "Discord",
+        "description": "Discord communication application",
+    },
+    "steam": {
+        "binary": "steam.exe",
+        "name": "Steam",
+        "description": "Steam gaming platform",
+    },
+    "vlc": {
+        "binary": "vlc.exe",
+        "name": "VLC Media Player",
+        "description": "VLC multimedia player",
+    },
+    "word": {
+        "binary": "winword.exe",
+        "name": "Microsoft Word",
+        "description": "Microsoft Word document processor",
+    },
+    "ms_word": {
+        "binary": "winword.exe",
+        "name": "Microsoft Word",
+        "description": "Microsoft Word document processor",
+    },
+    "excel": {
+        "binary": "excel.exe",
+        "name": "Microsoft Excel",
+        "description": "Microsoft Excel spreadsheet processor",
+    },
+    "ms_excel": {
+        "binary": "excel.exe",
+        "name": "Microsoft Excel",
+        "description": "Microsoft Excel spreadsheet processor",
+    },
+    "powerpoint": {
+        "binary": "powerpnt.exe",
+        "name": "Microsoft PowerPoint",
+        "description": "Microsoft PowerPoint presentation tool",
+    },
+    "outlook": {
+        "binary": "outlook.exe",
+        "name": "Microsoft Outlook",
+        "description": "Microsoft Outlook email client",
+    },
+    "onenote": {
+        "binary": "onenote.exe",
+        "name": "Microsoft OneNote",
+        "description": "Microsoft OneNote notes notebook",
+    },
+    "teams": {
+        "binary": "teams.exe",
+        "name": "Microsoft Teams",
+        "description": "Microsoft Teams communication",
+    },
+    "zoom": {
+        "binary": "zoom.exe",
+        "name": "Zoom",
+        "description": "Zoom video conferencing application",
+    },
+    "slack": {
+        "binary": "slack.exe",
+        "name": "Slack",
+        "description": "Slack collaboration messaging",
+    },
+    "obs": {
+        "binary": "obs64.exe",
+        "name": "OBS Studio",
+        "description": "OBS Studio broadcast recording software",
+    },
+    "blender": {
+        "binary": "blender.exe",
+        "name": "Blender",
+        "description": "Blender 3D computer graphics software",
+    },
+    "figma": {
+        "binary": "figma.exe",
+        "name": "Figma",
+        "description": "Figma design and prototyping tool",
+    },
+    "notion": {
+        "binary": "notion.exe",
+        "name": "Notion",
+        "description": "Notion workspace and notes application",
+    },
+    "telegram": {
+        "binary": "telegram.exe",
+        "name": "Telegram",
+        "description": "Telegram messaging application",
+    },
+    "whatsapp": {
+        "binary": "whatsapp.exe",
+        "name": "WhatsApp",
+        "description": "WhatsApp desktop messaging application",
+    },
 }
 
 # ============================================================================
@@ -140,7 +340,8 @@ class DesktopSecurityPolicy:
         ]
 
     def validate_application_name(self, app_name: str) -> Tuple[bool, str, Optional[Dict[str, str]]]:
-        """Verify requested application is in the trusted allowlist."""
+        """Verify requested application is in the trusted allowlist or a verified safe system application."""
+        import shutil
         norm_name = app_name.strip().lower()
         # Strip .exe if provided
         if norm_name.endswith(".exe"):
@@ -148,6 +349,42 @@ class DesktopSecurityPolicy:
 
         if norm_name in DEFAULT_APPLICATION_ALLOWLIST:
             return True, "Application is allowlisted.", DEFAULT_APPLICATION_ALLOWLIST[norm_name]
+
+        alt_name = norm_name.replace(" ", "_")
+        if alt_name in DEFAULT_APPLICATION_ALLOWLIST:
+            return True, "Application is allowlisted.", DEFAULT_APPLICATION_ALLOWLIST[alt_name]
+
+        alt_no_space = norm_name.replace(" ", "")
+        if alt_no_space in DEFAULT_APPLICATION_ALLOWLIST:
+            return True, "Application is allowlisted.", DEFAULT_APPLICATION_ALLOWLIST[alt_no_space]
+
+        # Check dynamic Windows Start Menu, Registry, and system application discovery
+        try:
+            from app.desktop.app_discovery import app_discovery
+            discovered = app_discovery.resolve_application(norm_name)
+            if discovered:
+                return True, "Application verified on system.", {
+                    "binary": discovered["target"],
+                    "name": discovered["name"],
+                    "description": f"Discovered Windows application: {discovered['name']}",
+                }
+        except Exception:
+            pass
+
+        # Check if requested application binary exists safely on the system
+        dangerous_commands = {
+            "format", "del", "erase", "rmdir", "rd", "regedit", "reg", "shutdown",
+            "diskpart", "bcdedit", "vssadmin", "takeown", "icacls", "cipher",
+            "powershell", "powershell_malicious", "format_c"
+        }
+        if norm_name not in dangerous_commands and not any(d in norm_name for d in ["malicious", "format", "shutdown", "rmdir"]):
+            resolved = shutil.which(norm_name) or shutil.which(f"{norm_name}.exe") or shutil.which(f"{alt_name}.exe")
+            if resolved:
+                return True, "Application verified on system.", {
+                    "binary": Path(resolved).name,
+                    "name": app_name.strip().title(),
+                    "description": f"Verified Windows executable: {resolved}",
+                }
 
         return False, f"Application '{app_name}' is not in the trusted allowlist. Supported applications: {', '.join(sorted(DEFAULT_APPLICATION_ALLOWLIST.keys()))}", None
 

@@ -3,6 +3,7 @@ from typing import Optional
 from app.ai.base import BaseAIProvider
 from app.ai.demo_provider import DemoAIProvider
 from app.ai.gemini_provider import GeminiAIProvider
+from app.ai.ollama_provider import OllamaAIProvider
 from app.core.config import settings
 from app.core.exceptions import AIConfigurationError
 from app.core.logging import get_logger
@@ -20,6 +21,13 @@ class AIProviderFactory:
         if selected == "demo":
             return DemoAIProvider()
 
+        if selected in ["ollama", "local"]:
+            return OllamaAIProvider(
+                base_url=settings.ollama_base_url,
+                model=settings.ollama_model or "llama3.2",
+                timeout_seconds=settings.ai_request_timeout_seconds,
+            )
+
         if selected == "gemini":
             api_key = settings.effective_gemini_api_key
             if not api_key or not api_key.strip():
@@ -36,5 +44,5 @@ class AIProviderFactory:
             )
 
         raise AIConfigurationError(
-            f"Unsupported AI provider '{selected}'. Supported providers are: 'demo', 'gemini'."
+            f"Unsupported AI provider '{selected}'. Supported providers are: 'demo', 'ollama' (or 'local'), 'gemini'."
         )

@@ -1,4 +1,4 @@
-"""Demo AI Provider for local testing and offline execution."""
+"""Demo AI Provider for local offline execution with honest capability reporting."""
 import asyncio
 from typing import List, Dict, Any, Optional, AsyncIterator
 from app.ai.base import BaseAIProvider
@@ -6,8 +6,8 @@ from app.ai.base import BaseAIProvider
 
 class DemoAIProvider(BaseAIProvider):
     """
-    Local demo provider used for development and testing.
-    Does not require external API keys or network access.
+    Local offline provider used when neither cloud AI (Gemini) nor local LLM (Ollama) is active.
+    Provides honest, truthful local responses without requiring external API keys.
     """
 
     @property
@@ -32,17 +32,43 @@ class DemoAIProvider(BaseAIProvider):
                 last_user_message = msg.get("content", "").strip()
                 break
 
-        truncated = (last_user_message[:60] + "...") if len(last_user_message) > 60 else last_user_message
+        query_lower = last_user_message.lower()
+
+        # Check if local context or evidence was injected into the prompt
+        evidence_content = ""
+        for msg in messages:
+            content = msg.get("content", "")
+            if "[LOCAL_PC_EVIDENCE]" in content:
+                evidence_content = content
+                break
+
+        if evidence_content:
+            return f"[Gideon Demo Mode]: Based on verified local PC evidence:\n{evidence_content}"
+
+        # If user sends a friendly greeting ("hello Gideon", "hey Gideon", "hi", etc.)
+        greeting_words = ["hello", "hey", "hi", "greetings", "good morning", "good afternoon", "good evening"]
+        if any(query_lower.startswith(g) or f" {g}" in query_lower for g in greeting_words):
+            return "Greetings. I am online and listening. How may I assist you?"
+
+        # If user asks about Gideon's local capabilities
+        if any(kw in query_lower for kw in ["what can you do", "help", "capabilities", "features", "commands"]):
+            return (
+                "I am your personal AI assistant and Windows command core. "
+                "I can open and close applications, search Google and YouTube, inspect open windows and screen OCR, "
+                "and manage your directives. What would you like me to do?"
+            )
+
+        truncated = (last_user_message[:70] + "...") if len(last_user_message) > 70 else last_user_message
 
         memory_note = ""
         if memories and len(memories) > 0:
-            memory_note = f" (Loaded {len(memories)} relevant reference memory/memories)."
+            memory_note = f" Loaded {len(memories)} persistent memories from prior sessions."
 
         return (
-            f"[Gideon Demo Mode]: I received your message: \"{truncated}\". "
-            "I am running in local demo mode without an active external AI API key. "
-            f"Conversations, tasks, and system pipelines are fully operational.{memory_note} "
-            "Connect an AI provider in your environment configuration to enable real-time generative responses."
+            f"[Gideon Demo Mode]: I processed your request: \"{truncated}\".{memory_note}\n\n"
+            "I am running in local offline demo mode. Real local PC context tools (window inspection, task status, "
+            "screen OCR, and directory summaries) and Phase 4 desktop actions are fully operational.\n"
+            "For free, private generative AI responses on this PC, install Ollama and select 'Local AI' in Settings."
         )
 
     async def generate_stream(
@@ -59,7 +85,6 @@ class DemoAIProvider(BaseAIProvider):
             **kwargs
         )
 
-        # Break into natural phrase chunks to simulate realistic progressive streaming
         words = full_response.split(" ")
         chunk_size = 4
         for i in range(0, len(words), chunk_size):
@@ -67,5 +92,4 @@ class DemoAIProvider(BaseAIProvider):
             if i + chunk_size < len(words):
                 chunk += " "
             yield chunk
-            # Yield control back to event loop for realistic simulation
             await asyncio.sleep(0.01)
